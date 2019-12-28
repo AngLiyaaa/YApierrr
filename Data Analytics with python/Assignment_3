@@ -1,0 +1,40 @@
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+
+
+# Problem 1
+from scipy.stats import norm
+sigma_1 = norm.cdf(1, loc = 0, scale = 1)
+sigma_2 = norm.cdf(-1, loc = 0, scale = 1)
+print('The probabilities within sigma', sigma_1 - sigma_2)
+twosigma_1 = norm.cdf(2, loc = 0, scale = 1)
+twosigma_2 = norm.cdf(-2, loc = 0, scale = 1)
+print('The probabilities within 2sigma', twosigma_1 - twosigma_2)
+threesigma_1 = norm.cdf(3, loc = 0, scale = 1)
+threesigma_2 = norm.cdf(-3, loc = 0, scale = 1)
+print('The probabilities within 3sigma', threesigma_1 - threesigma_2)
+how_many_sigma = norm.ppf(0.9999966, loc = 0, scale = 1)
+print('The precise sigma of 99.99966%', how_many_sigma)
+
+
+# Problem 2
+from scipy.stats import bernoulli
+print('Solve by math: 0.01 * 100 = ', 0.01 * 100)
+use_pmf = bernoulli.pmf(100, 1, 0.01)
+print('Use pmf function', use_pmf)
+use_rvs = bernoulli.rvs(size = 100, p = 0.01)
+print('use rvs function', use_rvs)
+how_many_resumes = bernoulli.ppf(0.9, 0.01)
+print('how many resumes', how_many_resumes)
+
+
+# Problem 3
+from scipy.stats import binom
+probability_1 = 1 - binom.cdf(550, n = 1000, p = 0.5)
+print('binomial distribution', probability_1)
+from scipy.stats import norm
+probability_2 =1 - norm.cdf(550, loc=0, scale = 15.81)
+print('normal distribution', probability_2)
+
