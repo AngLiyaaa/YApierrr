@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/11/7 21:55
+# @File  : machine_learning_assignment_6.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import sys
+
+
+def get_feature_data(feature_file, bias=0):
+    x = []
+    d_file = open(feature_file, 'r')
+    for line in d_file:
+        row = line.split()
+        r_vec = [float(item) for item in row]
+        if bias > 0:
+            r_vec.insert(0, bias)
+        x.append(r_vec)
+    d_file.close()
+    return x
+
+
+def get_label_data(label_file, hyper_plane_class=False):
+    l_file = open(label_file, 'r')
+    l_dict = {}
+    for line in l_file:
+        row = line.split()
+        if hyper_plane_class and int(row[0]) <= 0:
+            l_dict[int(row[1])] = -1
+        else:
+            l_dict[int(row[1])] = int(row[0])
+    l_file.close()
+    for i in l_dict.keys():
+        if l_dict[i] == 0:
+            l_dict[i] = -1
+    return l_dict
+
+
+def remove_predict_set(data_in, label_in):
+    predict = list()
+    d_temp = list()
+    for i in range(rows):
+        if label_in.get(i) is not None:
+            data_in[i].append(label_in[i])
+        else:
+            predict.append(data_in[i])
+    for j in data_in:
+        length = len(j)
+        if length == len(data_in[0]):
+            d_temp.append(j)
+    return predict, d_temp
+
+
+def split(threshold, col_in, dataset_in):
+    left = list()
+    right = list()
+    for data_temp in dataset_in:
+        if data_temp[col_in] < threshold:
+            left.append(data_temp)
+        else:
+            right.append(data_temp)
+    return left, right
+
+
+def gini_index(groups_in, class_value_in):
+    left = groups_in[0]
+    right = groups_in[1]
+    total = len(left) + len(right)
+    result = 0
+    for g in groups_in:
+        ss = len(g)
+        if ss == 0:
+            continue
+        temp1 = 1
+        for cc in class_value_in:
+            temp2 = [i[-1] for i in g].count(cc) / ss
+            temp1 = temp1 * temp2
+        result += temp1 * (ss / total)
+    return result
+
+
+def find_k_column(dataset_in, set_cols_in):
+    class_value = list(set(row[set_cols_in] for row in dataset_in))
+    best_col = 0
+    best_value = 0
+    best_gini = 1
+    for i in range(set_cols):
+        for j in range(set_rows):
+            groups = split(dataset_in[j][i], i, dataset_in)
+            gini = gini_index(groups, class_value)
+            if gini < best_gini:
+                best_col = i
+                best_value = dataset_in[j][i]
+                best_gini = gini
+    print('gini: ', best_gini)
+    return {'col': best_col, 'val': best_value}
+
+
+def find_s_value(dataset_in, col_in, value_in):
+    temp_column = list()
+    min_num = -1000000
+    for i in range(set_rows):
+        temp_column.append(dataset_in[i][col_in])
+    temp_column.sort()
+    for i in range(set_rows):
+        temp_value = dataset_in[i][col_in]
+        if temp_value < value_in:
+            if temp_value > min_num:
+                min_num = temp_value
+    result = (min_num + value_in) / 2
+    return result
+
+
+if __name__ == "__main__":
+    input_1 = sys.argv[1]
+    input_2 = sys.argv[2]
+    # input_1 = 'ionosphere.data'
+    # input_2 = 'ionosphere.trainlabels.0'
+    data = get_feature_data(input_1)
+    label = get_label_data(input_2)
+    rows = len(data)
+    cols = len(data[0])
+    dataset = remove_predict_set(data, label)[1]
+    set_rows = len(dataset)
+    set_cols = len(dataset[0]) - 1
+    k = find_k_column(dataset, set_cols)
+    s = find_s_value(dataset, k['col'], k['val'])
+    print('best column', k['col'])
+    print('split value', s)
+    
