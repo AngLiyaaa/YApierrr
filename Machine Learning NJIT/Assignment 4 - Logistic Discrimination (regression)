@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/10/13 10:27
+# @File  : temp_10_13.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import random
+import math
+import sys
+
+
+def get_feature_data(feature_file, bias=0):
+    x = []
+    d_file = open(feature_file, 'r')
+    i = 0
+    for line in d_file:
+        row = line.split()
+        r_vec = [float(item) for item in row]
+        if bias > 0:
+            r_vec.insert(0, bias)
+        x.append(r_vec)
+        x[i].append(1)
+        i += 1
+    d_file.close()
+    return x
+
+
+def get_label_data(label_file, hyper_plane_class=False):
+    l_file = open(label_file, 'r')
+    l_dict = {}
+    for line in l_file:
+        row = line.split()
+        if hyper_plane_class and int(row[0]) <= 0:
+            l_dict[int(row[1])] = -1
+        else:
+            l_dict[int(row[1])] = int(row[0])
+    l_file.close()
+    return l_dict
+
+
+def dot(a, b):
+    res = [x * y for x, y in zip(a, b)]
+    return sum(res)
+
+
+def cost_function(w_in, data_in, label_in):
+    res = 0
+    for i in range(rows):
+        if label_in.get(i) is not None:
+            r = dot(w_in, data_in[i])
+            res_1 = -1 * label_in.get(i) * math.log(1 / (1 + math.exp(-1 * r)))
+            res_2 = -1 * ((1 - label_in.get(i)) * math.log(math.exp(-1 * r) / (1 + math.exp(-1 * r))))
+            res += res_1 + res_2
+    return res
+
+
+def gradient_descent(data_in, label_in, eta=0.001, stop=0.001):
+    w = []
+
+    for i in range(cols):
+        w.append((0.02 * random.random()) - 0.01)
+
+    prev = cost_function(w, data_in, label_in)
+
+    while True:
+
+        grad = [0] * cols
+
+        for j in range(rows):
+            if label_in.get(j) is not None:
+                temp = dot(w, data_in[j])
+                dw = 1 / (1 + math.exp(-1 * temp)) - label_in.get(j)
+                for k in range(cols):
+                    grad[k] += dw * data_in[j][k]
+
+        w = [(w[h] - eta * grad[h]) for h in range(cols)]
+
+        err = cost_function(w, data_in, label_in)
+
+        if abs(prev - err) <= stop:
+            break
+        prev = err
+    return w
+
+
+def prediction(w_in, data_in, labels_in):
+    for i in range(0, rows, 1):
+        if labels_in.get(i) is None:
+            dp = dot(w_in, data_in[i])
+            if dp > 0:
+                print("1", i)
+            else:
+                print("0", i)
+    return
+
+
+if __name__ == '__main__':
+    # input_1 = sys.argv[1]
+    # input_2 = sys.argv[2]
+    input_1 = 'testLeastSquares_2.data'
+    input_2 = 'testLeastSquares.trainlabels.0'
+    data = get_feature_data(input_1)
+    label = get_label_data(input_2)
+    rows = len(data)
+    cols = len(data[0])
+    ww = gradient_descent(data, label)
+    print('w = ', ww[:2])
+    w0 = ww[-1]
+    m = math.sqrt(sum([ww[i] ** 2 for i in range(len(ww) - 1)]))
+    print('w0 = ', abs(w0 / (w0/m)))
+    # print('w0 = ', abs(m))
+    print('distance to origin', w0 / m)
+    prediction(ww, data, label)
