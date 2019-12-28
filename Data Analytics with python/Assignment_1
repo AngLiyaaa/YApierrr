@@ -1,0 +1,50 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/9/25 18:42
+# @File  : data_analytic_assignment_1.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import numpy as np
+import itertools
+import math
+
+tks = ['IBM', 'MSFT', 'GOOG', 'AAPL', 'AMZN', 'FB']
+allprices = {}
+result = {}
+
+
+def retrieveColumn(company_name):
+    f = open('{0}.csv'.format(company_name), 'r')
+    next(f)
+    for line in f.readlines():
+        adj = line.split(',')[5]
+        # if allprices.get(company_name, None) is None:
+        if allprices.get(company_name) is None:
+            allprices[company_name] = [float(adj)]
+        else:
+            allprices[company_name].append(float(adj))
+    return allprices
+
+
+for t in tks:
+    retrieveColumn(t)
+
+
+def computeCorrelation(x, y):
+    return sum((np.array(x)-np.array(x).mean())*(np.array(y)-np.array(y).mean()))\
+           / math.sqrt(sum(pow((np.array(x)-np.array(x).mean()), 2))*sum(pow((np.array(y)-np.array(y).mean()), 2)))
+
+
+pair = list(itertools.combinations(tks, 2))
+for i in pair:
+    # if result.get('{0}:{1} = '.format(i[0], i[1]), None) is None:
+    if result.get('{0}:{1} = '.format(i[0], i[1])) is None:
+        result['{0}:{1} = '.format(i[0], i[1])] = computeCorrelation(allprices.get(i[0]), allprices.get(i[1]))
+result_1 = sorted(result.items(), key=lambda j: j[1], reverse=True)
+for k in result_1:
+    print(k[0], k[1])
+    # print(k)
+    
