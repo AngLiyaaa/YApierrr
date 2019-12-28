@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/9/26 18:42
+# @File  : machine_learning_assignment_2.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import random
+import math
+import sys
+
+
+def get_feature_data(feature_file, bias=0):
+    x = []
+    d_file = open(feature_file, 'r')
+    i = 0
+    for line in d_file:
+        row = line.split()
+        r_vec = [float(item) for item in row]
+        if bias > 0:
+            r_vec.insert(0, bias)
+        x.append(r_vec)
+        x[i].append(1)
+        i += 1
+    d_file.close()
+    return x
+
+
+def get_label_data(label_file, hyper_plane_class=False):
+    l_file = open(label_file, 'r')
+    l_dict = {}
+    for line in l_file:
+        row = line.split()
+        if hyper_plane_class and int(row[0]) <= 0:
+            l_dict[int(row[1])] = -1
+        else:
+            l_dict[int(row[1])] = int(row[0])
+    l_file.close()
+    for i in l_dict.keys():
+        if l_dict[i] == 0:
+            l_dict[i] = -1
+    return l_dict
+
+
+def dot(a, b):
+    res = [x * y for x, y in zip(a, b)]
+    return sum(res)
+
+
+def least_square_error(w_in, data_in, label_in):
+    res = [0] * rows
+    for i in range(rows):
+        if label_in.get(i) is not None:
+            res[i] += label_in.get(i) - dot(w_in, data_in[i])
+    return dot(res, res)
+
+
+# def gradient_descent(data_in, label_in, eta=0.0001, stop=0.001):
+def gradient_descent(data_in, label_in, eta=0.001, stop=0.001):
+    w = []
+    for i in range(cols):
+        w.append((0.02 * random.random()) - 0.01)
+    prev = least_square_error(w, data_in, label_in)
+    while True:
+        grad = [0] * cols
+        for i in range(rows):
+            if label_in.get(i) is not None:
+                d_1 = dot(w, data_in[i])
+                for j in range(cols):
+                    grad[j] += (label_in.get(i) - d_1) * data_in[i][j]
+        w = [(w[h] + eta * grad[h]) for h in range(cols)]
+        err = least_square_error(w, data_in, label_in)
+        if abs(prev - err) <= stop:
+            break
+        prev = err
+    return w
+
+
+def prediction(w_in, data_in, labels_in):
+    for i in range(0, rows, 1):
+        if labels_in.get(i) is None:
+            dp = dot(w_in, data_in[i])
+            if dp > 0:
+                print("1", i)
+            else:
+                print("0", i)
+    return
+
+
+if __name__ == "__main__":
+    input_1 = sys.argv[1]
+    input_2 = sys.argv[2]
+    data = get_feature_data(input_1)
+    rows = len(data)
+    cols = len(data[0])
+    label = get_label_data(input_2)
+    ww = gradient_descent(data, label)
+    print('w = ', ww)
+    w0 = ww[-1]
+    m = math.sqrt(sum([ww[i] ** 2 for i in range(len(ww) - 1)]))
+    print('distance to origin = ', abs(w0 / m))
+    prediction(ww, data, label)
+    
