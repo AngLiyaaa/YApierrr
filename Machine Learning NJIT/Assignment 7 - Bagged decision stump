@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/11/12 16:40
+# @File  : machine_learning_assignment_7.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import random
+import sys
+
+
+def get_feature_data(feature_file, bias=0):
+    d_list = []
+    d_file = open(feature_file, 'r')
+    for line in d_file:
+        row = line.split()
+        r_vec = [float(item) for item in row]
+        if bias > 0:
+            r_vec.insert(0, bias)
+        d_list.append(r_vec)
+    d_file.close()
+    return d_list
+
+
+def get_label_data(label_file, hyper_plane_class=False):
+    l_file = open(label_file, 'r')
+    l_dict = {}
+    for line in l_file:
+        row = line.split()
+        if hyper_plane_class and int(row[0]) <= 0:
+            l_dict[int(row[1])] = -1
+        else:
+            l_dict[int(row[1])] = int(row[0])
+    l_file.close()
+    return l_dict
+
+
+def cart_decision_tree(data_in, label_in, col_in):
+    to_sort = dict()
+    row_size = 0
+    count_0_label = 0
+    for i in range(len(data_in)):
+        if label_in.get(i) is not None:
+            to_sort[i] = data_in[i][col_in]
+            row_size += 1
+            if label_in[i] is 0:
+                count_0_label += 1
+    sorted_col = sorted(to_sort, key=to_sort.__getitem__)
+    l_size = 1
+    r_size = row_size - 1
+    lp = 0
+    rp = count_0_label
+    if label_in[sorted_col[0]] == 0:
+        lp += 1
+        rp -= 1
+    best_split = -1
+    best_gini = 1000000
+    for j in range(1, len(sorted_col)):
+        split = (to_sort[sorted_col[j]] + to_sort[sorted_col[j-1]]) / 2
+        gini = (l_size/row_size)*(lp/l_size)*(1 - lp/l_size) + \
+               (r_size/row_size)*(rp/r_size)*(1 - rp/r_size)
+        if gini < best_gini:
+            best_gini = gini
+            best_split = split
+        if label_in[sorted_col[j]] == 0:
+            lp += 1
+            rp -= 1
+        l_size += 1
+        r_size -= 1
+    return best_split, best_gini
+
+
+def bagging_decision_stump(data_in, label_in, boots=100):
+    pred = dict()
+    for i in range(rows):
+        if label_in.get(i) is None:
+            pred[i] = 0
+    for j in range(boots):
+        count = 0
+        new_data = list()
+        new_train = dict()
+        while count < rows:
+            r = random.randint(0, rows - 1)
+            if label_in.get(r) is not None:
+                new_data.append(data_in[r])
+                new_train[count] = label_in[r]
+                count += 1
+        b_split = -1
+        b_col = -1
+        b_gini = 100000
+        for k in range(cols):
+            [s, g] = cart_decision_tree(new_data, new_train, k)
+            if g < b_gini:
+                b_gini = g
+                b_split = s
+                b_col = k
+        c_1 = 0
+        c_2 = 0
+        for h in range(rows):
+            if label_in.get(h) is not None:
+                if data_in[h][b_col] < b_split:
+                    if label_in[h] == 0:
+                        c_1 += 1
+                    else:
+                        c_2 += 1
+        if c_1 > c_2:
+            left = -1
+            right = 1
+        else:
+            left = 1
+            right = -1
+        for n in range(rows):
+            if label_in.get(n) is None:
+                if data_in[n][b_col] < b_split:
+                    pred[n] += left
+                else:
+                    pred[n] += right
+    return pred
+
+
+def prediction(pred_in, labels_in):
+    for i in range(rows):
+        if labels_in.get(i) is None:
+            if pred_in[i] > 0:
+                print("1", i)
+            else:
+                print("0", i)
+    return
+
+
+if __name__ == "__main__":
+    # input_1 = sys.argv[1]
+    # input_2 = sys.argv[2]
+    input_1 = 'breast_cancer.data'
+    input_2 = 'breast_cancer.trainlabels.0'
+    # input_1 = 'ionosphere.data'
+    # input_2 = 'ionosphere.trainlabels.0'
+    data = get_feature_data(input_1)
+    label = get_label_data(input_2)
+    rows = len(data)
+    cols = len(data[0])
+    pred_1 = bagging_decision_stump(data, label)
+    print(pred_1)
+    prediction(pred_1, label)
+    
