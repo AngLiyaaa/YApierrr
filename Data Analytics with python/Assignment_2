@@ -1,0 +1,33 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/10/8 12:16
+# @File  : data_analytic_assignment_2.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import pandas as pd
+# import numpy as np
+
+
+tks = ['IBM', 'MSFT', 'GOOG', 'AAPL', 'AMZN', 'FB']
+
+
+def get_data_frame(company_name):
+    df = pd.read_csv('{0}.csv'.format(company_name))
+    return df
+
+
+def compute_dividends(company_name):
+    result = get_data_frame(company_name)
+    temp_1 = result['Close'].shift(1)
+    temp_2 = result['Adj Close'].shift(1)
+    result['ratio_close'] = temp_1 / result['Close']
+    result['ratio_adj'] = temp_2 / result['Adj Close']
+    result['difference'] = result['ratio_close'] - result['ratio_adj']
+    result['dividends'] = abs(result['difference'] * result['Close'])
+    return result
+
+
+print(compute_dividends('IBM'))
