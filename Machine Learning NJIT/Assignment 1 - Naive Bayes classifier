@@ -1,1 +1,124 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/9/26 15:27
+# @File  : machine_learning_assignment_1.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
 
+
+import sys
+
+
+def getFeatureData(featureFile, bias=0):
+    x = []
+    dFile = open(featureFile, 'r')
+    i = 0
+    for line in dFile:
+        row = line.split()
+        rVec = [float(item) for item in row]
+        if bias > 0:
+            rVec.insert(0,bias)
+        # print('row {} : {}'.format(i,rVec))
+        x.append(rVec)
+        i += 1
+    dFile.close()
+    return x
+
+
+def getLabelData(labelFile, hyperPlaneClass=False):
+    lFile = open(labelFile, 'r')
+    lDict = {}
+    for line in lFile:
+        row = line.split()
+        # print('label : {}'.format(lDict))
+        if hyperPlaneClass and int(row[0]) <= 0:
+            lDict[int(row[1])] = -1
+        else:
+            lDict[int(row[1])] = int(row[0])
+    lFile.close()
+    return lDict
+
+
+def mergeLabelsAndFeatrues(lDict={},dataset=[]):
+    # create a list that append label to the right of featrue
+    for i in range(len(dataset)):
+        dataset[i].append(lDict.get(i))
+    return dataset
+
+
+def separateByClass(dataset):
+    # create a dictionary for that contains 3 classes('None'class for prediction)
+    separated = {}
+    for i in range(len(dataset)):
+        vector = dataset[i]
+        if vector[-1] not in separated:
+            separated[vector[-1]] = []
+        separated[vector[-1]].append(vector)
+    return separated
+
+
+def mean(numbers):
+    return sum(numbers) / float(len(numbers)) + 0.000001
+
+
+def variance(numbers):
+    avg = mean(numbers)
+    v = sum([pow(x - avg, 2) for x in numbers]) / float(len(numbers) - 1) + 0.000001
+    return v
+
+
+def computeModule_mean(dataset):
+    # get mean for classes
+    summaries = [mean(attribute) for attribute in zip(*dataset)]
+    del summaries[-1]
+    return summaries
+
+
+def computeModule_variance(dataset):
+    # get variance for classes
+    summaries = [variance(attribute) for attribute in zip(*dataset)]
+    del summaries[-1]
+    return summaries
+
+
+def prediction(test_set, calculation_0_m, calculation_0_v,
+               calculation_1_m, calculation_1_v):
+    class_prediction = []
+    c0 = 0
+    c1 = 0
+    for i in range(len(test_set)):
+        for j in range(len(test_set)):
+            c0 += (test_set[i][j] - calculation_0_m[j]) ** 2 / calculation_0_v[j]
+            c1 += (test_set[i][j] - calculation_1_m[j]) ** 2 / calculation_1_v[j]
+        if c1 > c0:
+            class_prediction.append([0, i + 10])
+        else:
+            class_prediction.append([1, i + 10])
+    return class_prediction
+
+
+def main():
+    # input_1 = sys.argv[1]
+    # input_2 = sys.argv[2]
+    input_1 = 'testBayes.data'
+    input_2 = 'testBayes.trainlabels.0'
+    trans_1 = getFeatureData(input_1)
+    trans_2 = getLabelData(input_2)
+    merged_data = mergeLabelsAndFeatrues(trans_2, trans_1)
+    class_0_data = separateByClass(merged_data)[0]
+    class_0_calculation_mean = computeModule_mean(class_0_data)
+    class_0_calculation_v = computeModule_variance(class_0_data)
+    class_1_data = separateByClass(merged_data)[1]
+    class_1_calculation_mean = computeModule_mean(class_1_data)
+    class_1_calculation_v = computeModule_variance(class_1_data)
+    class_test_data = separateByClass(merged_data)[None]
+    test_data = [item[:2] for item in class_test_data]
+    result = prediction(test_data, class_0_calculation_mean,
+                     class_0_calculation_v, class_1_calculation_mean,
+                     class_1_calculation_v)
+    print(' '.join(str(i) for i in result[0]))
+    print(' '.join(str(i) for i in result[1]))
+
+
+main()
