@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# @Time  : 2019/11/12 16:41
+# @File  : machine_learning_assignment_8.py
+# @Contact  : al666@njit.edu
+# @Author  : Daangang
+# @Desc  :
+
+
+import random
+from collections import defaultdict
+import math
+import sys
+
+
+def get_feature_data(feature_file, bias=0):
+    d_list = []
+    d_file = open(feature_file, 'r')
+    for line in d_file:
+        row = line.split()
+        r_vec = [float(item) for item in row]
+        if bias > 0:
+            r_vec.insert(0, bias)
+        d_list.append(r_vec)
+    d_file.close()
+    return d_list
+
+
+def distance(data_in, k_in):
+    res = sum([(m - n) ** 2 for m, n in zip(data_in, k_in)])
+    return math.sqrt(res)
+
+
+def find_center(data_in, center_in):
+    d = defaultdict(list)
+    m = list()
+    for i in range(rows):
+        temp_center = list()
+        for j in range(len(center_in)):
+            temp_center.append(distance(data_in[i], center_in[j]))
+        index = temp_center.index(min(temp_center))
+        d[index].append(data_in[i])
+    for key in d:
+        temp_center = d[key]
+        m.append([sum(x) / len(x) for x in zip(*temp_center)])
+    return m
+
+
+def k_means(data_in, k_in):
+    center = random.sample(data_in, k_in)
+    while True:
+        new_center = find_center(data_in, center)
+        if set([tuple(b) for b in center]) == set([tuple(b) for b in new_center]):
+            center = new_center
+            break
+        center = new_center
+    for i in range(rows):
+        temp = list()
+        for j in range(len(center)):
+            temp.append(distance(data_in[i], center[j]))
+        index = temp.index((min(temp)))
+        print('{} {}'.format(index, i))
+    return center
+
+
+if __name__ == "__main__":
+    input_1 = sys.argv[1]
+    k = int(sys.argv[2])
+    # input_1 = 'breast_cancer.data'
+    # input_1 = 'climate.data'
+    # input_1 = 'k_means.data'
+    # k = 3
+    data = get_feature_data(input_1)
+    rows = len(data)
+    cols = len(data[0])
+    mean = k_means(data, k)
+    print(mean)
+    
