@@ -1,0 +1,63 @@
+import urllib
+import html2text
+import re
+
+h = html2text.HTML2Text()
+# Ignore converting links from HTML
+h.ignore_links = True
+
+# if the url below doesn't work, the job post probably was deleted. 
+# You can go to https://newyork.craigslist.org/search/jjj?query=python to find another job url.
+resource_1 = urllib.request.urlopen("https://newyork.craigslist.org/mnh/sof/d/new-york-city-python-whiz-nerds-welcome/7008014434.html")
+content_1 = resource_1.read()
+charset_1 = resource_1.headers.get_content_charset()
+content_1 = content_1.decode(charset_1)
+job_post_1 = h.handle(content_1)
+print(job_post_1)
+
+
+resource_2 = urllib.request.urlopen("https://newyork.craigslist.org/mnh/sci/d/new-york-vacancy-for-bioinformatician/7020645286.html")
+content_2 = resource_2.read()
+charset_2 = resource_2.headers.get_content_charset()
+content_2 = content_2.decode(charset_2)
+job_post_2 = h.handle(content_2)
+print(job_post_2)
+
+
+import re
+
+job_describe_1 = ''.join(re.findall(r'Posted.*posted', job_post_1, re.S|re.I))
+# job_describe_1 = re.findall(r'Posted (\d{4}-\d{1,2}-\d{1,2}\s\d{1,2}:\d{1,2}).* posted', job_post, re.S|re.I)
+# job_describe_1 = re.findall(r'Posted.*posted', job_post, re.S|re.I)
+print(job_describe_1)
+
+
+job_describe_2 = ''.join(re.findall(r'Posted.*posted', job_post_2, re.S|re.I))
+print(job_describe_2)
+
+
+bag_of_words = ['Python', 'SQL', 'Hadoop', 'SparkSQL', 'Linux', 'R', 'Data', 'Engineer']
+bernoulli_1 = [1 if v in job_describe_1 else 0 for v in bag_of_words]
+bernoulli_2 = [1 if v in job_describe_2 else 0 for v in bag_of_words]
+print('bernoulli_1', bernoulli_1)
+print('bernoulli_2', bernoulli_2)
+
+def cosine_similarity(vector1, vector2):
+    import math
+    dot_product = sum(p*q for p,q in zip(vector1, vector2))
+    magnitude = math.sqrt(sum([val**2 for val in vector1])) * math.sqrt(sum([val**2 for val in vector2]))
+    if not magnitude:
+        return 0
+    return dot_product/magnitude
+
+bernoulli_similarty = cosine_similarity(bernoulli_1, bernoulli_2)
+print('bernoulli_similarty', bernoulli_similarty)
+
+
+multinomial_1 = [job_describe_1.count(v) for v in bag_of_words]
+multinomial_2 = [job_describe_2.count(v) for v in bag_of_words]
+print('multinomial_1', multinomial_1)
+print('multinomial_2', multinomial_2)
+
+multinomial_similarty = cosine_similarity(multinomial_1, multinomial_2)
+print('multinomial_similarty', multinomial_similarty)
