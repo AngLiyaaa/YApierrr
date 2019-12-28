@@ -114,3 +114,4 @@ if __name__ == '__main__':
     # print('w0 = ', abs(m))
     print('distance to origin', w0 / m)
     prediction(ww, data, label)
+   
