@@ -1,0 +1,167 @@
+'***Author: Angli, ID: al666; Shengchao Chen, ID: sc2426***'
+
+import sys
+import statistics as sts
+import random as rnd
+import numpy as np
+from sklearn import linear_model
+from sklearn import svm
+
+
+def get_feature_data(feature_file, bias=0):
+    x = []
+    d_file = open(feature_file, 'r')
+    i = 0
+    for line in d_file:
+        row = line.split()
+        r_vec = [float(item) for item in row]
+        if bias > 0:
+            r_vec.insert(0, bias)
+        x.append(r_vec)
+        x[i].append(1)
+        i += 1
+    d_file.close()
+    return x
+
+
+def get_label_data(label_file):
+    l_file = open(label_file, 'r')
+    l_list = []
+    for line in l_file:
+        row = line.split()
+        l_list.append(int(row[0]))
+    l_file.close()
+    return l_list
+
+
+def chi_sqr(x_in, y, top_frank):
+    rows = len(x_in)
+    cols = len(x_in[0])
+    temp = []
+    for j in range(0, cols):
+        chi_table = [[1, 1], [1, 1], [1, 1]]
+        for i in range(0, rows):
+            if y[i] == 0:
+                if x_in[i][j] == 0:
+                    chi_table[0][0] += 1
+                elif x_in[i][j] == 1:
+                    chi_table[1][0] += 1
+                elif x_in[i][j] == 2:
+                    chi_table[2][0] += 1
+            elif y[i] == 1:
+                if x_in[i][j] == 0:
+                    chi_table[0][1] += 1
+                elif x_in[i][j] == 1:
+                    chi_table[1][1] += 1
+                elif x_in[i][j] == 2:
+                    chi_table[2][1] += 1
+        col_total = [sum(c) for c in chi_table]
+        row_total = [sum(c) for c in zip(*chi_table)]
+        tot = sum(col_total)
+        exp = [[(r * c) / tot for r in row_total] for c in col_total]
+        sqr = [[((chi_table[i][j] - exp[i][j]) ** 2) / exp[i][j] for j in range(0, len(exp[0]))] for i in
+               range(0, len(exp))]
+        chi2 = sum([sum(x) for x in zip(*sqr)])
+        temp.append(chi2)
+    ind = sorted(range(len(temp)), key=temp.__getitem__,
+                 reverse=True)
+    indices = ind[:top_frank]
+    return indices
+
+
+def feature_extract(x_in, c):
+    ef = []
+    col = list(zip(*x_in))
+    for i in c:
+        ef.append(col[i])
+    ef = list(zip(*ef))
+    return ef
+
+
+def frank_select(file_train_data, file_train_labels, file_test_data):
+    data_ori = get_feature_data(file_train_data)
+    label_ori = get_label_data(file_train_labels)
+    temp_1 = list(zip(label_ori, data_ori))
+    rnd.shuffle(temp_1)
+    label_ori, data_ori = zip(*temp_1)
+    data_ori = np.array(data_ori)
+    label_ori = np.array(label_ori)
+    r1 = int(len(data_ori) * 0.75)
+    data_train = data_ori[:r1]
+    data_val = data_ori[r1:]
+    label_train = label_ori[:r1]
+    label_val = label_ori[r1:]
+    index = chi_sqr(data_train, label_train, 15)
+    data_train15 = feature_extract(data_train, index)
+    data_train15 = np.array(data_train15)
+    data_val15 = feature_extract(data_val, index)
+    data_val15 = np.array(data_val15)
+    data_test = get_feature_data(file_test_data)
+    data_test = np.array(data_test)
+    data_test15 = feature_extract(data_test, index)
+    data_test15 = np.array(data_test15)
+    frank_num = len(index)
+    print('\nNumber of features used: {}'.format(frank_num))
+    print('\nColumns used in prediction: {}'.format(index))
+    return data_train15, data_val15, data_test15, label_train, label_val, index
+
+
+def train_test(data_train15, data_val15, data_test15, label_train, label_val):
+    lin_svc = svm.LinearSVC(C=100.0, max_iter=200000)
+    svc = svm.SVC(C=100.0, kernel='linear', tol=0.0001)
+    log_reg = linear_model.LogisticRegression(C=100.0, max_iter=200000, solver='lbfgs')
+
+    # Train Model
+    train_1 = lin_svc.fit(data_train15, label_train)
+    train_2 = svc.fit(data_train15, label_train)
+    train_3 = log_reg.fit(data_train15, label_train)
+
+    # Validate Model [Using 'Max-Vote' Ensemble method]
+    validate_1 = train_1.predict(data_val15)
+    validate_2 = train_2.predict(data_val15)
+    validate_3 = train_3.predict(data_val15)
+    val_pred = np.array([])
+    for i in range(0, len(data_val15)):
+        val_pred = np.append(val_pred, sts.mode([validate_1[i], validate_2[i], validate_3[i]]))
+    sc = 0
+    for i in range(0, len(label_val)):
+        if val_pred[i] == label_val[i]:
+            sc += 1
+    accuracy = (sc / len(label_val)) * 100
+    print('\nThe accuracy of this model is {}%'.format(accuracy))
+
+    # Test with TestData
+    test1 = lin_svc.predict(data_test15)
+    test2 = svc.predict(data_test15)
+    test3 = log_reg.predict(data_test15)
+    test_pred = np.array([])
+    for i in range(0, len(data_test15)):
+        test_pred = np.append(val_pred, sts.mode([test1[i], test2[i], test3[i]]))
+    return test_pred, accuracy
+
+
+def write_test_pred(testpred, indexs, acr):
+    number = len(indexs)
+    prediction = open('Prediction.txt', 'w+')
+    for i in range(0, len(testpred)):
+        prediction.write('{} {}'.format(testpred[i], i))
+        prediction.write('\n')
+    prediction.close()
+
+    feature = open('Features_Files.txt', 'w+')
+    feature.write('\nAccuracy:{}%\n'.format(acr))
+    feature.write('\nNumber of features: {}\n'.format(number))
+    feature.write('\n Features selected:\n')
+    feature.write('\n')
+    for i in range(0, len(indexs)):
+        feature.write('{} '.format(indexs[i]))
+    feature.close()
+
+
+if __name__ == '__main__':
+    trainfile = sys.argv[1]
+    tlabelfile = sys.argv[2]
+    testfile = sys.argv[3]
+    X_train15, X_val15, X_test15, Y_train, Y_val, indi = frank_select(trainfile, tlabelfile, testfile)
+    test_predict, acr = train_test(X_train15, X_val15, X_test15, Y_train, Y_val)
+    write_test_pred(test_predict, indi, acr)
